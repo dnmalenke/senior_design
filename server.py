@@ -56,16 +56,16 @@ class Main():
         x4 = corners.item(6)
         y4 = corners.item(7)
 
-        cx = ((x1 + x2 + x4)/3 + (x2 + x3 + x4)/3)/2
-        cy = ((y1 + y2 + y4)/3 + (y2 + y3 + y4)/3)/2
+        cx = ((x1 + x2 + x4) / 3 + (x2 + x3 + x4) / 3) / 2
+        cy = ((y1 + y2 + y4) / 3 + (y2 + y3 + y4) / 3) / 2
 
         centerpoint = (int(cx), int(cy))
 
-        angle = np.arctan2((y2-y3),(x2-x3))
+        angle = np.arctan2((y2 - y3), (x2 - x3))
         arrlen = 75
-        arrowpoint = (int(arrlen*np.cos(angle) + cx), int(arrlen*np.sin(angle) + cy))
+        arrowpoint = (int(arrlen * np.cos(angle) + cx), int(arrlen * np.sin(angle) + cy))
 
-        cv2.arrowedLine(frame,centerpoint,arrowpoint,(255,0,255),5)
+        cv2.arrowedLine(frame, centerpoint, arrowpoint, (255, 0, 255), 5)
         pass
 
     def handle_mouse(event, x, y, flags, param):
