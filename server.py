@@ -2,6 +2,8 @@ import numpy as np
 import cv2
 import sys
 
+from controlpacket import *
+
 class Main():
     def __init__(self):
         self.camera_index = 0
@@ -27,6 +29,7 @@ class Main():
     def init_gui(self):
         cv2.setMouseCallback("frame", self.handle_mouse)
 
+    # Vishall
     def compute_dubins_path(self):
         # https://atsushisakai.github.io/PythonRobotics/modules/path_planning/dubins_path/dubins_path.html
         # https://github.com/AtsushiSakai/PythonRobotics/blob/master/PathPlanning/DubinsPath/dubins_path_planner.py
@@ -40,6 +43,7 @@ class Main():
 
         pass
 
+    # David
     def send_packet(self, id, left_speed, right_speed):
         pass
 
@@ -68,6 +72,7 @@ class Main():
         cv2.arrowedLine(frame, centerpoint, arrowpoint, (255, 0, 255), 5)
         pass
 
+    # Jax
     def handle_mouse(event, x, y, flags, param):
         pass
 

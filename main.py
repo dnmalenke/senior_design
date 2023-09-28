@@ -4,6 +4,8 @@ import digitalio
 import wifi
 import socketpool
 
+from controlpacket import *
+
 class Main:
     def __init__(self):
         pass
@@ -13,14 +15,17 @@ class Main:
         self.led.direction = digitalio.Direction.OUTPUT
         pass
 
+    # David
     def configure_wifi(self):
         # https://github.com/adafruit/circuitpython/blob/main/tests/circuitpython-manual/socketpool/server/cpy-server.py
         # asyncio for packet waiting/handling
         pass
 
-    def handle_packet(self):
+    # Jon
+    def handle_packet(self, packet: ControlPacket):
         pass
 
+    # David
     def display_tag(self):
         pass
 
