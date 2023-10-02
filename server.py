@@ -1,6 +1,10 @@
 import numpy as np
 import cv2
 import sys
+import socket
+import pickle
+
+UDP_PORT = 1234
 
 from controlpacket import *
 
@@ -8,6 +12,12 @@ class Main():
     def __init__(self):
         self.camera_index = 0
         pass
+
+    def init_network(self):
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        
+        ip = socket.gethostbyname(socket.gethostname())
+        self.ip_start = '.'.join(ip.split('.')[:-1])
 
     def init_camera(self):
         if sys.platform.startswith('win32'):
@@ -45,6 +55,13 @@ class Main():
 
     # David
     def send_packet(self, id, left_speed, right_speed):
+        packet = ControlPacket()
+        packet.left_speed = left_speed
+        packet.right_speed = right_speed
+
+        data = pickle.dumps(packet)
+
+        self.socket.sendto(data,(f"{self.ip_start}.{id}", UDP_PORT))
         pass
 
     def handle_tag(self, corners, id, frame):
@@ -77,6 +94,7 @@ class Main():
         pass
 
     def main(self):
+        self.init_network()        
         self.init_camera()
         self.init_aruco()
         self.init_gui()
