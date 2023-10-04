@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 import sys
 import socket
-import pickle
+import json
 
 UDP_PORT = 1234
 
@@ -27,9 +27,16 @@ class Main():
 
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1600)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 900)
+        # self.cap.set(cv2.CAP_PROP_SETTINGS, 1)
 
         self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)
         self.cap.set(cv2.CAP_PROP_EXPOSURE, -9) # 1/(2^-9) = 1/512 sec
+
+        self.cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+
+        self.cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.0)
+        self.cap.set(cv2.CAP_PROP_SHARPNESS, 255.0)
+        self.cap.set(cv2.CAP_PROP_GAIN, 1.0)
 
     def init_aruco(self):
         aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_250)
@@ -59,10 +66,12 @@ class Main():
         packet.left_speed = left_speed
         packet.right_speed = right_speed
 
-        data = pickle.dumps(packet)
-
+        jd = json.dumps(packet, default=vars)
+        print(jd)
+        data = jd.encode()
+        print(f"sending to {self.ip_start}.{id}")
         self.socket.sendto(data,(f"{self.ip_start}.{id}", UDP_PORT))
-        pass
+        
 
     def handle_tag(self, corners, id, frame):
         x1 = corners.item(0)
@@ -97,7 +106,8 @@ class Main():
         self.init_network()        
         self.init_camera()
         self.init_aruco()
-        self.init_gui()
+        # self.init_gui()
+
 
         while True:
             ret, frame = self.cap.read()
@@ -105,6 +115,8 @@ class Main():
             gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
             corners, ids, _ = self.aruco_detector.detectMarkers(gray_frame)
+            cv2.aruco.drawDetectedMarkers(frame,corners,ids)
+            
 
             if np.all(ids != None):
                 for i in range(ids.size):
@@ -120,4 +132,11 @@ class Main():
 
 
 if __name__ == "__main__":
+    # m = Main()
+    # m.init_network()
+    # import random
+    # import time
+    # while True:
+    #     m.send_packet(1, random.random(), random.random())
+    #     time.sleep(0.01)
     Main().main()
