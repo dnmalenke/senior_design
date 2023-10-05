@@ -169,7 +169,7 @@ class Main:
             asyncio.run(self.configure_wifi())
         except:
             print("Wifi connection failed.\nRestarting in 5 seconds.")
-            time.sleep(5)
+            await asyncio.sleep(5)
             supervisor.reload()
 
         await asyncio.sleep(1)
