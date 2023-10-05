@@ -127,6 +127,8 @@ class Main:
         if self.sock is None:
             print("Socket not initialized.")
             return
+        
+        last_packet = time.time()
 
         while True:
             udp_buffer = bytearray(512)
@@ -137,8 +139,14 @@ class Main:
                     packet = json.loads(udp_buffer)
                     self.motor_a.throttle = float(packet['left_speed'])
                     self.motor_b.throttle = float(packet['right_speed'])
+
+                    last_packet = time.thread_time()
             except:
                 pass
+
+            if time.time() - last_packet > 1:
+                self.motor_a.throttle = 0
+                self.motor_b.throttle = 0
 
     async def heartbeat_task(self):     
         # initialize onboard led here so it's not dependant on other hardware init   
@@ -164,7 +172,7 @@ class Main:
             time.sleep(5)
             supervisor.reload()
 
-        time.sleep(1)
+        await asyncio.sleep(1)
 
         asyncio.run(self.display_tag())
         
