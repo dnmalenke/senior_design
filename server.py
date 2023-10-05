@@ -3,10 +3,9 @@ import cv2
 import sys
 import socket
 import json
+from controlpacket import *
 
 UDP_PORT = 1234
-
-from controlpacket import *
 
 class Main():
     def __init__(self):
@@ -69,9 +68,7 @@ class Main():
         jd = json.dumps(packet, default=vars)
         print(jd)
         data = jd.encode()
-        print(f"sending to {self.ip_start}.{id}")
         self.socket.sendto(data,(f"{self.ip_start}.{id}", UDP_PORT))
-        
 
     def handle_tag(self, corners, id, frame):
         x1 = corners.item(0)
@@ -132,11 +129,4 @@ class Main():
 
 
 if __name__ == "__main__":
-    # m = Main()
-    # m.init_network()
-    # import random
-    # import time
-    # while True:
-    #     m.send_packet(1, random.random(), random.random())
-    #     time.sleep(0.01)
     Main().main()
