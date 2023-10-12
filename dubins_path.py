@@ -111,7 +111,6 @@ class main():
         planning_funcs = _PATH_TYPE_MAP.values()
         best_cost = float("inf")
         b_d1, b_d2, b_d3, b_mode = None, None, None, None
-
         for planner in planning_funcs:
             d1, d2, d3, mode = planner(alpha, beta, d)
             if d1 is None:
@@ -121,7 +120,11 @@ class main():
             if best_cost > cost:  # Select minimum length one.
                 b_d1, b_d2, b_d3, b_mode, best_cost = d1, d2, d3, mode, cost
 
+        lengths = [b_d1, b_d2, b_d3]
         # determine length of the each segment in the shortest path
+        lengths = [length / curvature for length in lengths]
+
+        return b_mode, lengths
         # if length negligible, skip
         # else send left/right wheel speeds according to segment type
 
