@@ -122,7 +122,6 @@ class main():
 
         lengths = [b_d1, b_d2, b_d3]
         # determine length of the each segment in the shortest path
-        lengths = [length / curvature for length in lengths]
 
         return b_mode, lengths
         # if length negligible, skip
