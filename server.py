@@ -4,6 +4,9 @@ import sys
 import socket
 import json
 from controlpacket import *
+from math import sin, cos, atan2, sqrt, acos, pi, hypot
+from utils import angle_mod, rot_mat_2d
+
 
 UDP_PORT = 1234
 
@@ -44,6 +47,20 @@ class Main():
 
     def init_gui(self):
         cv2.setMouseCallback("frame", self.handle_mouse)
+
+    # Vishall
+    def compute_dubins_path(self):
+        # https://atsushisakai.github.io/PythonRobotics/modules/path_planning/dubins_path/dubins_path.html
+        # https://github.com/AtsushiSakai/PythonRobotics/blob/master/PathPlanning/DubinsPath/dubins_path_planner.py
+
+        # steps:
+        # calculate the length of the 6 possible paths
+        # determine the shortest path
+        # determine length of the each segment in the shortest path
+        # if length negligible, skip
+        # else send left/right wheel speeds according to segment type
+
+        pass
 
     # David
     def send_packet(self, id, left_speed, right_speed):

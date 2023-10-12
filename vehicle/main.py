@@ -31,11 +31,11 @@ class Main:
         mctl_sleep.direction = digitalio.Direction.OUTPUT
         mctl_sleep.value = True
 
-        motor_a_in1 = pwmio.PWMOut(board.IO1, frequency = 50)
-        motor_a_in2 = pwmio.PWMOut(board.IO2, frequency = 50)
+        motor_a_in1 = pwmio.PWMOut(board.IO0, frequency = 50)
+        motor_a_in2 = pwmio.PWMOut(board.IO1, frequency = 50)
 
-        motor_b_in1 = pwmio.PWMOut(board.IO3, frequency = 50)
-        motor_b_in2 = pwmio.PWMOut(board.IO4, frequency = 50)
+        motor_b_in1 = pwmio.PWMOut(board.IO2, frequency = 50)
+        motor_b_in2 = pwmio.PWMOut(board.IO3, frequency = 50)
         
         self.motor_a = Motor.DCMotor(motor_a_in1, motor_a_in2)
         self.motor_b = Motor.DCMotor(motor_b_in1, motor_b_in2)
