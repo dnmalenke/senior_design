@@ -1,3 +1,11 @@
+"""
+
+Dubins path planner sample code
+
+author Atsushi Sakai(@Atsushi_twi)
+
+"""
+
 from math import sin, cos, atan2, sqrt, acos, pi, hypot
 import numpy as np
 from utils.angle import angle_mod, rot_mat_2d
@@ -5,7 +13,71 @@ from utils.angle import angle_mod, rot_mat_2d
 show_animation = True
 
 
-def plan_dubins_path(s_x, s_y, s_yaw, g_x, g_y, g_yaw, curvature,   step_size=0.1, selected_types=None):
+def plan_dubins_path(s_x, s_y, s_yaw, g_x, g_y, g_yaw, curvature,
+                     step_size=0.1, selected_types=None):
+    """
+    Plan dubins path
+
+    Parameters
+    ----------
+    s_x : float
+        x position of the start point [m]
+    s_y : float
+        y position of the start point [m]
+    s_yaw : float
+        yaw angle of the start point [rad]
+    g_x : float
+        x position of the goal point [m]
+    g_y : float
+        y position of the end point [m]
+    g_yaw : float
+        yaw angle of the end point [rad]
+    curvature : float
+        curvature for curve [1/m]
+    step_size : float (optional)
+        step size between two path points [m]. Default is 0.1
+    selected_types : a list of string or None
+        selected path planning types. If None, all types are used for
+        path planning, and minimum path length result is returned.
+        You can select used path plannings types by a string list.
+        e.g.: ["RSL", "RSR"]
+
+    Returns
+    -------
+    x_list: array
+        x positions of the path
+    y_list: array
+        y positions of the path
+    yaw_list: array
+        yaw angles of the path
+    modes: array
+        mode list of the path
+    lengths: array
+        arrow_length list of the path segments.
+
+    Examples
+    --------
+    You can generate a dubins path.
+
+    >>> start_x = 1.0  # [m]
+    >>> start_y = 1.0  # [m]
+    >>> start_yaw = np.deg2rad(45.0)  # [rad]
+    >>> end_x = -3.0  # [m]
+    >>> end_y = -3.0  # [m]
+    >>> end_yaw = np.deg2rad(-45.0)  # [rad]
+    >>> curvature = 1.0
+    >>> path_x, path_y, path_yaw, mode, _ = plan_dubins_path(
+                start_x, start_y, start_yaw, end_x, end_y, end_yaw, curvature)
+    >>> plt.plot(path_x, path_y, label="final course " + "".join(mode))
+    >>> plot_arrow(start_x, start_y, start_yaw)
+    >>> plot_arrow(end_x, end_y, end_yaw)
+    >>> plt.legend()
+    >>> plt.grid(True)
+    >>> plt.axis("equal")
+    >>> plt.show()
+
+    .. image:: dubins_path.jpg
+    """
     if selected_types is None:
         planning_funcs = _PATH_TYPE_MAP.values()
     else:
@@ -21,7 +93,7 @@ def plan_dubins_path(s_x, s_y, s_yaw, g_x, g_y, g_yaw, curvature,   step_size=0.
     lp_x, lp_y, lp_yaw, modes, lengths = _dubins_path_planning_from_origin(
         local_goal_x, local_goal_y, local_goal_yaw, curvature, step_size,
         planning_funcs)
-
+    vectors = [(modes[0], lengths[0]), (modes[1], lengths[1]), (modes[2], lengths[2])]
     # Convert a local coordinate path to the global coordinate
     rot = rot_mat_2d(-s_yaw)
     converted_xy = np.stack([lp_x, lp_y]).T @ rot
@@ -29,8 +101,7 @@ def plan_dubins_path(s_x, s_y, s_yaw, g_x, g_y, g_yaw, curvature,   step_size=0.
     y_list = converted_xy[:, 1] + s_y
     yaw_list = angle_mod(np.array(lp_yaw) + s_yaw)
 
-    return x_list, y_list, yaw_list, modes, lengths
-
+    return x_list, y_list, yaw_list, modes, vectors
 
 
 def _mod2pi(theta):
@@ -90,6 +161,7 @@ def _RSL(alpha, beta, d):
     p_squared = d ** 2 - 2 + (2 * cos_ab) - (2 * d * (sin_a + sin_b))
     mode = ["R", "S", "L"]
     if p_squared < 0:
+        # p_squared = 0.0
         return None, None, None, mode
     d1 = sqrt(p_squared)
     tmp = atan2((cos_a + cos_b), (d - sin_a - sin_b)) - atan2(2.0, d1)
@@ -141,9 +213,11 @@ def _dubins_path_planning_from_origin(end_x, end_y, end_yaw, curvature,
 
     for planner in planning_funcs:
         d1, d2, d3, mode = planner(alpha, beta, d)
+        # print((d1,d2,d3))
+
         if d1 is None:
             continue
-
+        
         cost = (abs(d1) + abs(d2) + abs(d3))
         if best_cost > cost:  # Select minimum length one.
             b_d1, b_d2, b_d3, b_mode, best_cost = d1, d2, d3, mode, cost
@@ -151,7 +225,7 @@ def _dubins_path_planning_from_origin(end_x, end_y, end_yaw, curvature,
     lengths = [b_d1, b_d2, b_d3]
     x_list, y_list, yaw_list = _generate_local_course(lengths, b_mode,
                                                       curvature, step_size)
-
+    
     lengths = [length / curvature for length in lengths]
 
     return x_list, y_list, yaw_list, b_mode, lengths
@@ -207,22 +281,24 @@ def _generate_local_course(lengths, modes, max_curvature, step_size):
 
 
 def main():
-    print("Dubins path planner sample start!!")
     import matplotlib.pyplot as plt
     from utils.plot import plot_arrow
 
-    start_x = 1.0  # [m]
-    start_y = 1.0  # [m]
-    start_yaw = np.deg2rad(45.0)  # [rad]
+    start_x = 0.0 # [m]
+    start_y = 0.0 # [m]
+    start_yaw = np.deg2rad(0)  # [rad]
 
-    end_x = -3.0  # [m]
-    end_y = -3.0  # [m]
-    end_yaw = np.deg2rad(-45.0)  # [rad]
+    end_x = 3.0  # [m]
+    end_y = 3.0  # [m]
+    end_yaw = np.deg2rad(15.0)  # [rad]
 
-    curvature = 1.0
-
-    path_x, path_y, path_yaw, mode, lengths = plan_dubins_path(start_x, start_y, start_yaw, end_x, end_y, end_yaw, curvature)
-
+    curvature = 1
+    #x_list, y_list, yaw_list, b_d1, b_d2, b_d3, b_mode, lengths
+    path_x, path_y, path_yaw, mode, vectors = plan_dubins_path(start_x, start_y, start_yaw, end_x, end_y, end_yaw, curvature)
+    print(vectors)
+    print("X: "+str(path_x))
+    print("Y: "+str(path_y))
+    print("Angle: "+str(path_yaw))
     if show_animation:
         plt.plot(path_x, path_y, label="".join(mode))
         plot_arrow(start_x, start_y, start_yaw)
