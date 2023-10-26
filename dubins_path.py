@@ -78,6 +78,12 @@ def plan_dubins_path(s_x, s_y, s_yaw, g_x, g_y, g_yaw, curvature,
 
     .. image:: dubins_path.jpg
     """
+
+    tolerance = 1.0
+    if sqrt((s_x-g_x)**2 + (s_y-g_y)**2) < tolerance:
+
+        return[0], [0], [0], ["STOP"], ["STOP","STOP","STOP"]
+     
     if selected_types is None:
         planning_funcs = _PATH_TYPE_MAP.values()
     else:
