@@ -80,7 +80,7 @@ def plan_dubins_path(s_x, s_y, s_yaw, g_x, g_y, g_yaw, curvature,
     """
 
     tolerance = 1.0
-    if sqrt((s_x-g_x)**2 + (s_y-g_y)**2) < tolerance:
+    if sqrt((g_x-s_x)**2 + (g_y-s_y)**2) < tolerance:
 
         return[0], [0], [0], ["STOP"], ["STOP","STOP","STOP"]
      
@@ -288,14 +288,14 @@ def _generate_local_course(lengths, modes, max_curvature, step_size):
 
 def main():
     import matplotlib.pyplot as plt
-    from utils.plot import plot_arrow
+    from utils.angle import plot_arrow
 
-    start_x = 0.0 # [m]
-    start_y = 0.0 # [m]
+    start_x = 1.5 # [m]
+    start_y = 2.5 # [m]
     start_yaw = np.deg2rad(0)  # [rad]
 
-    end_x = 3.0  # [m]
-    end_y = 3.0  # [m]
+    end_x = 1.0  # [m]
+    end_y = 2.0  # [m]
     end_yaw = np.deg2rad(15.0)  # [rad]
 
     curvature = 1
