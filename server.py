@@ -4,6 +4,7 @@ import sys
 import socket
 import json
 from controlpacket import *
+from dubins_path import plan_dubins_path
 
 UDP_PORT = 1234
 
@@ -45,20 +46,6 @@ class Main():
     def init_gui(self):
         cv2.setMouseCallback("frame", self.handle_mouse)
 
-    # Vishall
-    def compute_dubins_path(self):
-        # https://atsushisakai.github.io/PythonRobotics/modules/path_planning/dubins_path/dubins_path.html
-        # https://github.com/AtsushiSakai/PythonRobotics/blob/master/PathPlanning/DubinsPath/dubins_path_planner.py
-
-        # steps:
-        # calculate the length of the 6 possible paths
-        # determine the shortest path
-        # determine length of the each segment in the shortest path
-        # if length negligible, skip
-        # else send left/right wheel speeds according to segment type
-
-        pass
-
     # David
     def send_packet(self, id, left_speed, right_speed):
         packet = ControlPacket()
@@ -68,7 +55,11 @@ class Main():
         jd = json.dumps(packet, default=vars)
         print(jd)
         data = jd.encode()
-        self.socket.sendto(data,(f"{self.ip_start}.{id}", UDP_PORT))
+        try:
+            self.socket.sendto(data,(f"{self.ip_start}.{id}", UDP_PORT))
+        except Exception as e:
+            print(e)
+            pass
 
     def handle_tag(self, corners, id, frame):
         x1 = corners.item(0)
@@ -89,22 +80,58 @@ class Main():
         centerpoint = (int(cx), int(cy))
 
         angle = np.arctan2((y2 - y3), (x2 - x3))
+        angle += np.pi/2
         arrlen = 75
         arrowpoint = (int(arrlen * np.cos(angle) + cx), int(arrlen * np.sin(angle) + cy))
 
         cv2.arrowedLine(frame, centerpoint, arrowpoint, (255, 0, 255), 5)
+        cv2.putText(frame, f"location: {centerpoint}. angle: {np.round(np.rad2deg(angle),2)} deg", (centerpoint[0], centerpoint[1] + 20), cv2.FONT_HERSHEY_PLAIN, 1, (0,0,255), 2)
+
+        start_x = float(centerpoint[0]) # [m]
+        start_y = float(centerpoint[1]) # [m]
+        start_yaw = angle  # [rad]
+
+        end_x = 300.0  # [m]
+        end_y = 300.0  # [m]
+        end_yaw = np.deg2rad(180)  # [rad]
+
+        cv2.drawMarker(frame, (int(end_x),int(end_y)),(0, 255, 0),cv2.MARKER_CROSS,10,3)
+
+        curvature = 0.008
+        #x_list, y_list, yaw_list, b_d1, b_d2, b_d3, b_mode, lengths
+        path_x, path_y, path_yaw, mode, vectors = plan_dubins_path(start_x, start_y, start_yaw, end_x, end_y, end_yaw, curvature)
+        print(vectors)
+
+        for x,y in zip(path_x,path_y):
+            cv2.drawMarker(frame, (int(x),int(y)),(255, 0, 0),cv2.MARKER_SQUARE,2,1)
+
+        for dir,len in vectors:
+            if len < 30:
+                continue
+            match dir:
+                case 'L':
+                    self.send_packet(id,0.05,-0.3)
+                case 'S':
+                    self.send_packet(id,0.2,-0.2)
+                case 'R':
+                    self.send_packet(id,0.3,0.05)
+                case 'STOP':
+                    self.send_packet(id,0,0)
+            break
         pass
 
     # Jax
-    def handle_mouse(event, x, y, flags, param):
+    def handle_mouse(self, event, x, y, flags, param):
+        
         pass
 
     def main(self):
         self.init_network()        
         self.init_camera()
         self.init_aruco()
-        # self.init_gui()
+        # self.init_gui
 
+        
 
         while True:
             ret, frame = self.cap.read()
@@ -117,7 +144,9 @@ class Main():
 
             if np.all(ids != None):
                 for i in range(ids.size):
-                    self.handle_tag(corners[i], ids[i], frame)
+                    self.handle_tag(corners[i], int(ids[i]), frame)
+
+            
             
             cv2.imshow('frame', frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
