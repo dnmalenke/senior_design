@@ -84,6 +84,29 @@ class Main():
         cv2.arrowedLine(frame, centerpoint, arrowpoint, (255, 0, 255), 5)
         pass
 
+    def scaling_function(self, corners):
+        x1 = corners.item(0)
+        y1 = corners.item(1)
+
+        x2 = corners.item(2)
+        y2 = corners.item(3)
+    
+        x3 = corners.item(4)
+        y3 = corners.item(5)
+    
+        x4 = corners.item(6)
+        y4 = corners.item(7)
+
+        len1 = x2 - x1
+        len2 = y2 - y3
+        len3 = x3 - x4
+        len4 = y1 - y4
+        avg_len = (len1+len2+len3+len4)/4
+
+        factor = avg_len / 2.2
+
+        return factor 
+
     # Jax
     def handle_mouse(event, x, y, flags, param):
         pass
