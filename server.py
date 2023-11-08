@@ -84,7 +84,7 @@ class Main():
         cv2.arrowedLine(frame, centerpoint, arrowpoint, (255, 0, 255), 5)
         pass
 
-    def scaling_function(self, corners):
+    def scaling_factor(self, corners):
         x1 = corners.item(0)
         y1 = corners.item(1)
 
