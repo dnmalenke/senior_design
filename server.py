@@ -175,7 +175,7 @@ class Main():
         
         self.draw_path(frame,start_x,start_y,start_yaw,end_x,end_y,end_yaw,vectors,curvature,id)
 
-        for len in vectors:
+        for dir, len in vectors:
             len = self.unscaling_factor(corners, len)
         
     def draw_tag(self, id,corners, frame):
@@ -226,7 +226,7 @@ class Main():
         len4 = y1 - y4
         avg_len = (len1+len2+len3+len4)/4
 
-        factor = avg_len / 2.2
+        factor = avg_len / 22
         scaled_x = x * factor
 
         return scaled_x
@@ -251,7 +251,9 @@ class Main():
         avg_len = (len1+len2+len3+len4)/4
 
         factor = avg_len / 22
-        unscaled_x = x / factor
+        if x != 0:
+            unscaled_x = x / factor
+        else: unscaled_x = 0
 
         return unscaled_x
 
