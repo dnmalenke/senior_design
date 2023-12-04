@@ -53,7 +53,6 @@ class Main():
         self.selected_point = -1
         self.destinations = {}
         self.states = {}
-        self.command_buffer = {}
         
     # David
     def send_packet(self, id, left_speed, right_speed):
@@ -149,25 +148,22 @@ class Main():
 
         self.draw_path(frame, start_x, start_y, start_yaw, end_x, end_y, end_yaw, vectors, curvature, id)
 
-        for dir, len in vectors:
-            if len < 30:
-                continue
-
-            self.command_buffer[id].append((dir, len))
-
-            if self.states.get(id) == 'start' and self.command_buffer[id]:
-                for command in self.command_buffer[id]:
-                    dir, length = command
-                    match dir:
-                        case 'L':
-                            self.send_packet(id,0.05,0.3)
-                        case 'S':
-                            self.send_packet(id,0.2,0.2)
-                        case 'R':
-                            self.send_packet(id,0.3,0.05)
-                        case 'STOP':
-                            self.send_packet(id,0,0)
-                    self.command_buffer[id].remove(command)
+        if self.states.get(id) == 'start':
+            for dir, len in vectors:
+                if len < 50:
+                    continue
+                match dir:
+                    case 'L':
+                        self.send_packet(id,0.05,0.3)
+                    case 'S':
+                        self.send_packet(id,0.2,0.2)
+                    case 'R':
+                        self.send_packet(id,0.3,0.05)
+                    case 'STOP':
+                        self.send_packet(id,0,0)
+                break
+        else:
+            self.send_packet(id,0,0)
         
     def draw_tag(self, id, corners, frame):
         x1,y1 = corners[0]
@@ -297,8 +293,6 @@ class Main():
             if np.all(ids != None):
                 for id,corners in zip(ids,corners):
                     car_id = int(id[0])
-                    if car_id not in self.command_buffer:
-                        self.command_buffer[car_id] = []
                     self.markers[int(id[0])] = corners[0]
                     self.handle_tag(corners[0], int(id[0]), frame)
                     self.draw_tag(int(id[0]), corners[0], frame)
