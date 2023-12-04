@@ -141,13 +141,14 @@ class Main():
         start_y = float(centerpoint[1]) # [m]
         start_yaw = angle  # [rad]
 
+
+
         curvature = 0.015
-        
-        vectors = plan_dubins_path(start_x, start_y, start_yaw, end_x, end_y, end_yaw, curvature)
+        tolerance = 80
+
+        vectors = plan_dubins_path(start_x, start_y, start_yaw, end_x, end_y, end_yaw, curvature, tolerance)
         print(id)
         print(vectors)
-
-        self.draw_path(frame,start_x,start_y,start_yaw,end_x,end_y,end_yaw,vectors,curvature,id)
 
         for dir,len in vectors:
             if len < 50 and dir != 'STOP':
@@ -162,6 +163,9 @@ class Main():
                 case 'STOP':
                     self.send_packet(id,0,0)
             break
+        
+        self.draw_path(frame,start_x,start_y,start_yaw,end_x,end_y,end_yaw,vectors,curvature,id)
+
         
     def draw_tag(self, id,corners, frame):
         x1,y1 = corners[0]
