@@ -267,12 +267,12 @@ def main():
     import matplotlib.pyplot as plt
     from utils.angle import plot_arrow
 
-    start_x = 1.5 # [m]
-    start_y = 2.5 # [m]
-    start_yaw = np.deg2rad(0)  # [rad]
+    start_x = 1.0 # [m]
+    start_y = 1.0 # [m]
+    start_yaw = np.deg2rad(0.0)  # [rad]
 
-    end_x = 1.0  # [m]
-    end_y = 2.0  # [m]
+    end_x = 3.0  # [m]
+    end_y = 3.0  # [m]
     end_yaw = np.deg2rad(15.0)  # [rad]
 
     curvature = 1
