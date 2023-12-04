@@ -13,7 +13,7 @@ from utils.angle import angle_mod, rot_mat_2d
 show_animation = True
 
 
-def plan_dubins_path(s_x, s_y, s_yaw, g_x, g_y, g_yaw, curvature, tolerance = 75.0,
+def plan_dubins_path(s_x, s_y, s_yaw, g_x, g_y, g_yaw, curvature, tolerance = 80.0,
                      step_size=0.1, selected_types=None):
  
     if sqrt((g_x-s_x)**2 + (g_y-s_y)**2) < tolerance:

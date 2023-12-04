@@ -27,15 +27,15 @@ class Main:
         backlight = pwmio.PWMOut(board.IO6, frequency = 500000)
         backlight.duty_cycle = int(0.2 * 65535)
                 
-        mctl_sleep = digitalio.DigitalInOut(board.IO5) # could replace with pull up resistor
+        mctl_sleep = digitalio.DigitalInOut(board.IO3) # could replace with pull up resistor
         mctl_sleep.direction = digitalio.Direction.OUTPUT
         mctl_sleep.value = True
 
-        motor_a_in1 = pwmio.PWMOut(board.IO0, frequency = 50)
-        motor_a_in2 = pwmio.PWMOut(board.IO1, frequency = 50)
+        motor_a_in1 = pwmio.PWMOut(board.IO1, frequency = 50)
+        motor_a_in2 = pwmio.PWMOut(board.IO2, frequency = 50)
 
-        motor_b_in1 = pwmio.PWMOut(board.IO2, frequency = 50)
-        motor_b_in2 = pwmio.PWMOut(board.IO3, frequency = 50)
+        motor_b_in1 = pwmio.PWMOut(board.IO5, frequency = 50)
+        motor_b_in2 = pwmio.PWMOut(board.IO4, frequency = 50)
         
         self.motor_a = Motor.DCMotor(motor_a_in1, motor_a_in2)
         self.motor_b = Motor.DCMotor(motor_b_in1, motor_b_in2)
@@ -69,7 +69,7 @@ class Main:
 
     async def display_tag(self):
         id = -1
-
+        
         try:
             id = int(str(wifi.radio.ipv4_address).split('.')[3])
         except:
@@ -139,12 +139,14 @@ class Main:
                     packet = json.loads(udp_buffer)
                     self.motor_a.throttle = float(packet['left_speed'])
                     self.motor_b.throttle = float(packet['right_speed'])
+                    print(packet)
+                    # print(time.thread_time() - last_packet)
 
-                    last_packet = time.thread_time()
+                    last_packet = time.time()
             except:
                 pass
 
-            if time.time() - last_packet > 1:
+            if time.time() - last_packet > 2:
                 self.motor_a.throttle = 0
                 self.motor_b.throttle = 0
 
@@ -165,14 +167,14 @@ class Main:
 
         asyncio.run(self.init_hardware())
 
-        try:
-            asyncio.run(self.configure_wifi())
-        except:
-            print("Wifi connection failed.\nRestarting in 5 seconds.")
-            await asyncio.sleep(5)
-            supervisor.reload()
+        while True:
+            try:
+                asyncio.run(self.configure_wifi())
+                break
+            except:
+                print("Wifi connection failed... Reconnecting.")
 
-        await asyncio.sleep(1)
+        # await asyncio.sleep(1)
 
         asyncio.run(self.display_tag())
         

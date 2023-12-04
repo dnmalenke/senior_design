@@ -141,22 +141,24 @@ class Main():
         start_y = float(centerpoint[1]) # [m]
         start_yaw = angle  # [rad]
 
-        curvature = 0.008
+        curvature = 0.015
         
         vectors = plan_dubins_path(start_x, start_y, start_yaw, end_x, end_y, end_yaw, curvature)
+        print(id)
+        print(vectors)
 
         self.draw_path(frame,start_x,start_y,start_yaw,end_x,end_y,end_yaw,vectors,curvature,id)
 
         for dir,len in vectors:
-            if len < 30:
+            if len < 50 and dir != 'STOP':
                 continue
             match dir:
                 case 'L':
-                    self.send_packet(id,0.05,0.3)
+                    self.send_packet(id,-0.17,-0.08)
                 case 'S':
-                    self.send_packet(id,0.2,0.2)
+                    self.send_packet(id,-0.15,-0.15)
                 case 'R':
-                    self.send_packet(id,0.3,0.05)
+                    self.send_packet(id,-0.08,-0.17)
                 case 'STOP':
                     self.send_packet(id,0,0)
             break
@@ -171,7 +173,7 @@ class Main():
             color = (0, 255, 0)
         else:
             color = (0,0,255)
-
+        
         cv2.line(frame,(int(x1),int(y1)),(int(x2),int(y2)),color,1)
         cv2.line(frame,(int(x2),int(y2)),(int(x3),int(y3)),color,1)
         cv2.line(frame,(int(x3),int(y3)),(int(x4),int(y4)),color,1)
@@ -250,7 +252,6 @@ class Main():
 
         while True:
             ret, frame = self.cap.read()
-
             gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
             corners,ids, _ = self.aruco_detector.detectMarkers(gray_frame)
