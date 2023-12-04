@@ -11,7 +11,7 @@ UDP_PORT = 1234
 
 class Main():
     def __init__(self):
-        self.camera_index = 0
+        self.camera_index = 1
         pass
 
     def init_network(self):
@@ -250,7 +250,7 @@ class Main():
         len4 = y1 - y4
         avg_len = (len1+len2+len3+len4)/4
 
-        factor = avg_len / 2.2
+        factor = avg_len / 22
         unscaled_x = x / factor
 
         return unscaled_x
@@ -276,7 +276,9 @@ class Main():
 
                     if(ui_helpers.is_point_inside_quadrilateral((x,y),[c1, c2, c3, c4])):
                         self.selected_arrow = id  
-
+        end_x = self.scaling_factor(corners, end_x)
+        end_y = self.scaling_factor(corners, end_y)
+        end_yaw = self.scaling_factor(corners, end_yaw)  
         if event == cv2.EVENT_MOUSEMOVE:
             if self.selected_arrow != -1 and self.selected_arrow in self.destinations: 
                 end_x, end_y, _ = self.destinations[self.selected_arrow]
