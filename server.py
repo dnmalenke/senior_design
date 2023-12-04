@@ -141,17 +141,26 @@ class Main():
         start_y = float(centerpoint[1]) # [m]
         start_yaw = angle  # [rad]
 
-
-
         curvature = 0.015
         tolerance = 80
+
+        start_x = self.scaling_factor(corners, start_x)
+        start_y = self.scaling_factor(corners, start_y)
+        start_yaw = self.scaling_factor(corners, start_yaw)  
+        
+        end_x = self.scaling_factor(corners, end_x)
+        end_y = self.scaling_factor(corners, end_y)
+        end_yaw = self.scaling_factor(corners, end_yaw)  
+
+        curvature = self.scaling_factor(corners, curvature)
+        tolerance = self.scaling_factor(corners, tolerance)
 
         vectors = plan_dubins_path(start_x, start_y, start_yaw, end_x, end_y, end_yaw, curvature, tolerance)
         print(id)
         print(vectors)
 
         for dir,len in vectors:
-            if len < 50 and dir != 'STOP':
+            if len < self.scaling_factor(corners, 50) and dir != 'STOP':
                 continue
             match dir:
                 case 'L':
@@ -166,6 +175,8 @@ class Main():
         
         self.draw_path(frame,start_x,start_y,start_yaw,end_x,end_y,end_yaw,vectors,curvature,id)
 
+        for len in vectors:
+            len = self.unscaling_factor(corners, len)
         
     def draw_tag(self, id,corners, frame):
         x1,y1 = corners[0]
@@ -196,7 +207,7 @@ class Main():
         cv2.arrowedLine(frame, centerpoint, arrowpoint,(255,0,255), 1)
         cv2.putText(frame, f"id: {id}. location: {centerpoint}. angle: {np.round(np.rad2deg(angle),2)} deg", (centerpoint[0], centerpoint[1] + 20), cv2.FONT_HERSHEY_PLAIN, 1, (0,0,255), 2)    
 
-    def scaling_factor(self, corners):
+    def scaling_factor(self, corners, x):
         x1 = corners.item(0)
         y1 = corners.item(1)
 
@@ -216,8 +227,33 @@ class Main():
         avg_len = (len1+len2+len3+len4)/4
 
         factor = avg_len / 2.2
+        scaled_x = x * factor
 
-        return factor 
+        return scaled_x
+    
+    def unscaling_factor(self, corners, x):
+        x1 = corners.item(0)
+        y1 = corners.item(1)
+
+        x2 = corners.item(2)
+        y2 = corners.item(3)
+    
+        x3 = corners.item(4)
+        y3 = corners.item(5)
+    
+        x4 = corners.item(6)
+        y4 = corners.item(7)
+
+        len1 = x2 - x1
+        len2 = y2 - y3
+        len3 = x3 - x4
+        len4 = y1 - y4
+        avg_len = (len1+len2+len3+len4)/4
+
+        factor = avg_len / 2.2
+        unscaled_x = x / factor
+
+        return unscaled_x
 
     # Jax
     def handle_mouse(event, x, y, flags, param):
