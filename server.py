@@ -52,6 +52,8 @@ class Main():
         self.selected_arrow = -1
         self.selected_point = -1
         self.destinations = {}
+        self.states = {}
+        self.command_buffer = {}
         
     # David
     def send_packet(self, id, left_speed, right_speed):
@@ -63,12 +65,12 @@ class Main():
         # print(jd)
         data = jd.encode()
         try:
-            self.socket.sendto(data,(f"{self.ip_start}.{id}", UDP_PORT))
+            self.socket.sendto(data, (f"{self.ip_start}.{id}", UDP_PORT))
         except Exception as e:
             print(e)
             pass
 
-    def draw_path(self, frame, start_x, start_y, start_yaw, end_x,end_y,end_yaw,vectors, curvature,id):
+    def draw_path(self, frame, start_x, start_y, start_yaw, end_x, end_y, end_yaw, vectors, curvature, id):
         x1, y1, a1 = start_x, start_y, start_yaw
         radius = 1 / curvature
 
@@ -118,7 +120,7 @@ class Main():
             point_color = (0,255,0)
 
         cv2.arrowedLine(frame, (int(end_x), int(end_y)), arrowpoint, arrow_color, 3)
-        cv2.drawMarker(frame, (int(end_x),int(end_y)),point_color,cv2.MARKER_CROSS,10,3)        
+        cv2.drawMarker(frame, (int(end_x), int(end_y)), point_color, cv2.MARKER_CROSS, 10, 3)        
 
     def handle_tag(self, corners, id, frame):
         if id not in self.destinations:
@@ -145,30 +147,36 @@ class Main():
         
         vectors = plan_dubins_path(start_x, start_y, start_yaw, end_x, end_y, end_yaw, curvature)
 
-        self.draw_path(frame,start_x,start_y,start_yaw,end_x,end_y,end_yaw,vectors,curvature,id)
+        self.draw_path(frame, start_x, start_y, start_yaw, end_x, end_y, end_yaw, vectors, curvature, id)
 
-        for dir,len in vectors:
+        for dir, len in vectors:
             if len < 30:
                 continue
-            match dir:
-                case 'L':
-                    self.send_packet(id,0.05,0.3)
-                case 'S':
-                    self.send_packet(id,0.2,0.2)
-                case 'R':
-                    self.send_packet(id,0.3,0.05)
-                case 'STOP':
-                    self.send_packet(id,0,0)
-            break
+
+            self.command_buffer[id].append((dir, len))
+
+            if self.states.get(id) == 'start' and self.command_buffer[id]:
+                for command in self.command_buffer[id]:
+                    dir, length = command
+                    match dir:
+                        case 'L':
+                            self.send_packet(id,0.05,0.3)
+                        case 'S':
+                            self.send_packet(id,0.2,0.2)
+                        case 'R':
+                            self.send_packet(id,0.3,0.05)
+                        case 'STOP':
+                            self.send_packet(id,0,0)
+                    self.command_buffer[id].remove(command)
         
-    def draw_tag(self, id,corners, frame):
+    def draw_tag(self, id, corners, frame):
         x1,y1 = corners[0]
         x2,y2 = corners[1]
         x3,y3 = corners[2]
         x4,y4 = corners[3]
 
         if id == self.selected_box:
-            color = (0, 255, 0)
+            color = (0,255,0)
         else:
             color = (0,0,255)
 
@@ -187,8 +195,33 @@ class Main():
         arrlen = 75
         arrowpoint = (int(arrlen * np.cos(angle) + cx), int(arrlen * np.sin(angle) + cy))
 
-        cv2.arrowedLine(frame, centerpoint, arrowpoint,(255,0,255), 1)
+        cv2.arrowedLine(frame, centerpoint, arrowpoint, (255,0,255), 1)
         cv2.putText(frame, f"id: {id}. location: {centerpoint}. angle: {np.round(np.rad2deg(angle),2)} deg", (centerpoint[0], centerpoint[1] + 20), cv2.FONT_HERSHEY_PLAIN, 1, (0,0,255), 2)    
+
+    def draw_start_stop_buttons(self, id, frame):
+        if self.selected_box != -1 and self.states.get(id) == 'stop':
+            start_x1, start_y1 = 10, 10
+            start_x2, start_y2 = 110, 110
+
+            cv2.rectangle(frame, (start_x1, start_y1), (start_x2, start_y2), (0, 255, 0), cv2.FILLED)
+
+            start_text = "Start"
+            start_text_size, _ = cv2.getTextSize(start_text, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)
+            start_text_x = int(start_x1 + (start_x2 - start_x1 - start_text_size[0]) / 2)
+            start_text_y = int(start_y1 + (start_y2 - start_y1 + start_text_size[1]) / 2)
+            cv2.putText(frame, start_text, (start_text_x, start_text_y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+        
+        elif self.selected_box != -1 and self.states.get(id) == 'start':
+            stop_x1, stop_y1 = 120, 10
+            stop_x2, stop_y2 = 220, 110
+
+            cv2.rectangle(frame, (stop_x1, stop_y1), (stop_x2, stop_y2), (0, 0, 255), cv2.FILLED)
+
+            stop_text = "Stop"
+            stop_text_size, _ = cv2.getTextSize(stop_text, cv2.FONT_HERSHEY_SIMPLEX, 1, 2)
+            stop_text_x = int(stop_x1 + (stop_x2 - stop_x1 - stop_text_size[0]) / 2)
+            stop_text_y = int(stop_y1 + (stop_y2 - stop_y1 + stop_text_size[1]) / 2)
+            cv2.putText(frame, stop_text, (stop_text_x, stop_text_y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
 
     def handle_mouse(self, event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:              
@@ -208,6 +241,12 @@ class Main():
 
                     if(ui_helpers.is_point_inside_quadrilateral((x,y),[c1, c2, c3, c4])):
                         self.selected_arrow = id  
+            
+            if self.selected_box != -1:
+                if self.states[self.selected_box] == 'stop' and ui_helpers.is_point_inside_quadrilateral((x,y), [(10,10),(110, 10),(110,110),(10,110)]):
+                    self.states[self.selected_box] = 'start'
+                elif self.states[self.selected_box] == 'start' and ui_helpers.is_point_inside_quadrilateral((x,y), [(120,10),(220, 10),(220,110),(120,110)]):
+                    self.states[self.selected_box] = 'stop'
 
         if event == cv2.EVENT_MOUSEMOVE:
             if self.selected_arrow != -1 and self.selected_arrow in self.destinations: 
@@ -223,7 +262,7 @@ class Main():
             self.selected_point = -1
             if(self.selected_box != -1 and self.selected_box in self.markers):
                 corners = self.markers[self.selected_box]
-                if not ui_helpers.is_point_inside_quadrilateral((x,y),corners):
+                if not ui_helpers.is_point_inside_quadrilateral((x,y),corners) and not ui_helpers.is_point_inside_quadrilateral((x,y), [(10,10),(110, 10),(110,110),(10,110)]) and not ui_helpers.is_point_inside_quadrilateral((x,y), [(120,10),(220, 10),(220,110),(120,110)]):
                     x1,y1 = corners[0]
                     x2,y2 = corners[1]
                     x3,y3 = corners[2]
@@ -233,7 +272,7 @@ class Main():
                     cy = ((y1 + y2 + y4) / 3 + (y2 + y3 + y4) / 3) / 2
 
                     self.destinations[self.selected_box] = (x,y,np.arctan2((y-cy), (x-cx)) )
-                elif self.selected_box in self.destinations:
+                elif self.selected_box in self.destinations and not ui_helpers.is_point_inside_quadrilateral((x,y), [(10,10),(110, 10),(110,110),(10,110)]) and not ui_helpers.is_point_inside_quadrilateral((x,y), [(120,10),(220, 10),(220,110),(120,110)]):
                     del(self.destinations[self.selected_box])
                 self.selected_box = -1
                 return
@@ -257,9 +296,15 @@ class Main():
 
             if np.all(ids != None):
                 for id,corners in zip(ids,corners):
+                    car_id = int(id[0])
+                    if car_id not in self.command_buffer:
+                        self.command_buffer[car_id] = []
                     self.markers[int(id[0])] = corners[0]
                     self.handle_tag(corners[0], int(id[0]), frame)
-                    self.draw_tag(int(id[0]),corners[0], frame)
+                    self.draw_tag(int(id[0]), corners[0], frame)
+                    if car_id not in self.states:
+                        self.states[car_id] = 'stop'
+                    self.draw_start_stop_buttons(int(id[0]), frame)
             
             cv2.imshow('frame', frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
