@@ -8,22 +8,17 @@ author Atsushi Sakai(@Atsushi_twi)
 
 from math import sin, cos, atan2, sqrt, acos, pi, hypot
 import numpy as np
-from utils.angle import angle_mod, rot_mat_2d
+from scipy.spatial.transform import Rotation as Rot
 
 show_animation = True
 
 
-def plan_dubins_path(s_x, s_y, s_yaw, g_x, g_y, g_yaw, curvature, tolerance = 80.0,
-                     step_size=0.1, selected_types=None):
+def plan_dubins_path(s_x, s_y, s_yaw, g_x, g_y, g_yaw, curvature, tolerance = 80.0):
  
     if sqrt((g_x-s_x)**2 + (g_y-s_y)**2) < tolerance:
         return [("STOP",0),("STOP",0),("STOP",0)]
      
-    if selected_types is None:
-        planning_funcs = _PATH_TYPE_MAP.values()
-    else:
-        planning_funcs = [_PATH_TYPE_MAP[ptype] for ptype in selected_types]
-
+    planning_funcs = _PATH_TYPE_MAP.values()
     # calculate local goal x, y, yaw
     l_rot = rot_mat_2d(s_yaw)
     le_xy = np.stack([g_x - s_x, g_y - s_y]).T @ l_rot
@@ -31,10 +26,90 @@ def plan_dubins_path(s_x, s_y, s_yaw, g_x, g_y, g_yaw, curvature, tolerance = 80
     local_goal_y = le_xy[1]
     local_goal_yaw = g_yaw - s_yaw
 
-    modes, lengths = _dubins_path_planning_from_origin(local_goal_x, local_goal_y, local_goal_yaw, curvature, step_size,planning_funcs)
+    modes, lengths = _dubins_path_planning_from_origin(local_goal_x, local_goal_y, local_goal_yaw, curvature, planning_funcs)
     vectors = [(modes[0], lengths[0]), (modes[1], lengths[1]), (modes[2], lengths[2])]
 
     return vectors 
+
+def rot_mat_2d(angle):
+    """
+    Create 2D rotation matrix from an angle
+
+    Parameters
+    ----------
+    angle :
+
+    Returns
+    -------
+    A 2D rotation matrix
+
+    Examples
+    --------
+    >>> angle_mod(-4.0)
+
+
+    """
+    return Rot.from_euler('z', angle).as_matrix()[0:2, 0:2]
+
+
+def angle_mod(x, zero_2_2pi=False, degree=False):
+    """
+    Angle modulo operation
+    Default angle modulo range is [-pi, pi)
+
+    Parameters
+    ----------
+    x : float or array_like
+        A angle or an array of angles. This array is flattened for
+        the calculation. When an angle is provided, a float angle is returned.
+    zero_2_2pi : bool, optional
+        Change angle modulo range to [0, 2pi)
+        Default is False.
+    degree : bool, optional
+        If True, then the given angles are assumed to be in degrees.
+        Default is False.
+
+    Returns
+    -------
+    ret : float or ndarray
+        an angle or an array of modulated angle.
+
+    Examples
+    --------
+    >>> angle_mod(-4.0)
+    2.28318531
+
+    >>> angle_mod([-4.0])
+    np.array(2.28318531)
+
+    >>> angle_mod([-150.0, 190.0, 350], degree=True)
+    array([-150., -170.,  -10.])
+
+    >>> angle_mod(-60.0, zero_2_2pi=True, degree=True)
+    array([300.])
+
+    """
+    if isinstance(x, float):
+        is_float = True
+    else:
+        is_float = False
+
+    x = np.asarray(x).flatten()
+    if degree:
+        x = np.deg2rad(x)
+
+    if zero_2_2pi:
+        mod_angle = x % (2 * np.pi)
+    else:
+        mod_angle = (x + np.pi) % (2 * np.pi) - np.pi
+
+    if degree:
+        mod_angle = np.rad2deg(mod_angle)
+
+    if is_float:
+        return mod_angle.item()
+    else:
+        return mod_angle
 
 
 def _mod2pi(theta):
@@ -131,8 +206,7 @@ _PATH_TYPE_MAP = {"LSL": _LSL, "RSR": _RSR, "LSR": _LSR, "RSL": _RSL,
                   "RLR": _RLR, "LRL": _LRL, }
 
 
-def _dubins_path_planning_from_origin(end_x, end_y, end_yaw, curvature,
-                                      step_size, planning_funcs):
+def _dubins_path_planning_from_origin(end_x, end_y, end_yaw, curvature,planning_funcs):
     dx = end_x
     dy = end_y
     d = hypot(dx, dy) * curvature
@@ -146,7 +220,6 @@ def _dubins_path_planning_from_origin(end_x, end_y, end_yaw, curvature,
 
     for planner in planning_funcs:
         d1, d2, d3, mode = planner(alpha, beta, d)
-        # print((d1,d2,d3))
 
         if d1 is None:
             continue
@@ -160,61 +233,3 @@ def _dubins_path_planning_from_origin(end_x, end_y, end_yaw, curvature,
     lengths = [length / curvature for length in lengths]
 
     return b_mode, lengths
-
-
-def _interpolate(length, mode, max_curvature, origin_x, origin_y,
-                 origin_yaw, path_x, path_y, path_yaw):
-    if mode == "S":
-        path_x.append(origin_x + length / max_curvature * cos(origin_yaw))
-        path_y.append(origin_y + length / max_curvature * sin(origin_yaw))
-        path_yaw.append(origin_yaw)
-    else:  # curve
-        ldx = sin(length) / max_curvature
-        ldy = 0.0
-        if mode == "L":  # left turn
-            ldy = (1.0 - cos(length)) / max_curvature
-        elif mode == "R":  # right turn
-            ldy = (1.0 - cos(length)) / -max_curvature
-        gdx = cos(-origin_yaw) * ldx + sin(-origin_yaw) * ldy
-        gdy = -sin(-origin_yaw) * ldx + cos(-origin_yaw) * ldy
-        path_x.append(origin_x + gdx)
-        path_y.append(origin_y + gdy)
-
-        if mode == "L":  # left turn
-            path_yaw.append(origin_yaw + length)
-        elif mode == "R":  # right turn
-            path_yaw.append(origin_yaw - length)
-
-    return path_x, path_y, path_yaw
-
-def main():
-    import matplotlib.pyplot as plt
-    from utils.angle import plot_arrow
-
-    start_x = 949.0 # [m]
-    start_y = 200.0 # [m]
-    start_yaw = np.deg2rad(183)  # [rad]
-
-    end_x = 300.0  # [m]
-    end_y = 300.0  # [m]
-    end_yaw = np.deg2rad(180)  # [rad]
-
-    curvature = 0.005
-    #x_list, y_list, yaw_list, b_d1, b_d2, b_d3, b_mode, lengths
-    path_x, path_y, path_yaw, mode, vectors = plan_dubins_path(start_x, start_y, start_yaw, end_x, end_y, end_yaw, curvature)
-    print(vectors)
-    print("X: "+str(path_x))
-    print("Y: "+str(path_y))
-    print("Angle: "+str(path_yaw))
-    if show_animation:
-        plt.plot(path_x, path_y, label="".join(mode))
-        plot_arrow(start_x, start_y, start_yaw)
-        plot_arrow(end_x, end_y, end_yaw)
-        plt.legend()
-        plt.grid(True)
-        plt.axis("equal")
-        plt.show()
-
-
-if __name__ == '__main__':
-    main()
