@@ -9,7 +9,6 @@ import arucodict
 import displayio
 import busio
 import pwmio
-import supervisor
 import time
 
 from adafruit_st7789 import ST7789
@@ -140,7 +139,6 @@ class Main:
                     self.motor_a.throttle = float(packet['left_speed'])
                     self.motor_b.throttle = float(packet['right_speed'])
                     print(packet)
-                    # print(time.thread_time() - last_packet)
 
                     last_packet = time.time()
             except:
@@ -151,7 +149,7 @@ class Main:
                 self.motor_b.throttle = 0
 
     async def heartbeat_task(self):     
-        # initialize onboard led here so it's not dependant on other hardware init   
+        # initialize onboard led here so it's not dependent on other hardware init   
         self.led = digitalio.DigitalInOut(board.IO21)
         self.led.direction = digitalio.Direction.OUTPUT
         
