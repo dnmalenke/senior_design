@@ -8,7 +8,6 @@ author Atsushi Sakai(@Atsushi_twi)
 
 from math import sin, cos, atan2, sqrt, acos, pi, hypot
 import numpy as np
-from scipy.spatial.transform import Rotation as Rot
 
 show_animation = True
 
@@ -49,7 +48,7 @@ def rot_mat_2d(angle):
 
 
     """
-    return Rot.from_euler('z', angle).as_matrix()[0:2, 0:2]
+    return np.array([[np.cos(angle),-np.sin(angle)],[np.sin(angle),np.cos(angle)]])
 
 
 def angle_mod(x, zero_2_2pi=False, degree=False):
