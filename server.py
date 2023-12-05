@@ -4,8 +4,10 @@ import sys
 import socket
 import json
 import ui_helpers
+import math_helpers
 from controlpacket import *
 from dubins_path import plan_dubins_path
+
 
 UDP_PORT = 1234
 CAMERA_INDEX = 0
@@ -63,23 +65,19 @@ class Main():
             self.socket.sendto(data, (f"{self.ip_start}.{id}", UDP_PORT))
         except Exception as e:
             print(e)
-            pass      
+            pass  
 
     def handle_tag(self, corners, id, frame):
         if id not in self.destinations:
             return
         
         end_x,end_y, end_yaw = self.destinations[id]
-        x1,y1 = corners[0]
-        x2,y2 = corners[1]
-        x3,y3 = corners[2]
-        x4,y4 = corners[3]
-
-        cx = ((x1 + x2 + x4) / 3 + (x2 + x3 + x4) / 3) / 2
-        cy = ((y1 + y2 + y4) / 3 + (y2 + y3 + y4) / 3) / 2
+        cx,cy = math_helpers.calculate_center(corners)
 
         centerpoint = (int(cx), int(cy))
 
+        x2,y2 = corners[1]
+        x3,y3 = corners[2]
         angle = np.arctan2((y2 - y3), (x2 - x3)) + np.pi/2
 
         start_x = float(centerpoint[0]) # [m]
@@ -138,13 +136,7 @@ class Main():
                 self.destinations[self.selected_arrow] = (end_x,end_y,end_yaw)
             if self.selected_point != -1 and self.selected_point in self.destinations:
                 corners = self.markers[self.selected_box]
-                x1,y1 = corners[0]
-                x2,y2 = corners[1]
-                x3,y3 = corners[2]
-                x4,y4 = corners[3]
-
-                cx = ((x1 + x2 + x4) / 3 + (x2 + x3 + x4) / 3) / 2
-                cy = ((y1 + y2 + y4) / 3 + (y2 + y3 + y4) / 3) / 2
+                cx, cy = math_helpers.calculate_center(corners)
                 self.destinations[self.selected_point] = (x,y,np.arctan2((y-cy), (x-cx)))
 
         if event == cv2.EVENT_LBUTTONUP:
@@ -162,14 +154,7 @@ class Main():
                     self.running[self.selected_box] = not self.running[self.selected_box]
                 else:
                     if not ui_helpers.is_point_inside_quadrilateral((x,y),corners):
-                        x1,y1 = corners[0]
-                        x2,y2 = corners[1]
-                        x3,y3 = corners[2]
-                        x4,y4 = corners[3]
-
-                        cx = ((x1 + x2 + x4) / 3 + (x2 + x3 + x4) / 3) / 2
-                        cy = ((y1 + y2 + y4) / 3 + (y2 + y3 + y4) / 3) / 2
-
+                        cx,cy = math_helpers.calculate_center(corners)
                         self.destinations[self.selected_box] = (x,y,np.arctan2((y-cy), (x-cx)))
                     elif self.selected_box in self.destinations:
                         del(self.destinations[self.selected_box])
