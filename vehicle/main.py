@@ -46,7 +46,7 @@ class Main:
         spi.configure(baudrate = 24000000) # Configure SPI for 24MHz
         spi.unlock()
 
-        display_bus = displayio.FourWire(spi, command = board.IO43, chip_select = board.IO44) # check if we don't need reset and check if we can go without command pin as well
+        display_bus = displayio.FourWire(spi, command = board.IO43, chip_select = board.IO44) 
 
         self.display = ST7789(display_bus, width = 280, height = 240, rowstart = 20, rotation = 90)
 

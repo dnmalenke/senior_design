@@ -11,9 +11,11 @@ import numpy as np
 
 show_animation = True
 
-
 def plan_dubins_path(s_x, s_y, s_yaw, g_x, g_y, g_yaw, curvature, tolerance = 80.0):
- 
+    """
+    modified dubins path planning code that returns a set of direction and lengths instead of a list of interpolated points.
+    This is more efficient than calculating points and is easier to use by the server
+    """
     if sqrt((g_x-s_x)**2 + (g_y-s_y)**2) < tolerance:
         return [("STOP",0),("STOP",0),("STOP",0)]
      
