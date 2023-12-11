@@ -92,10 +92,10 @@ class Main():
         start_yaw = angle  # [rad]
 
         curvature = 0.015
-        tolerance = 80
+        tolerance = 125
         
         vectors = plan_dubins_path(start_x, start_y, start_yaw, end_x, end_y, end_yaw, curvature, tolerance)
-        print(f"{id}: {vectors}")
+        # print(f"{id}: {vectors}")
 
         ui_helpers.draw_path(frame, start_x, start_y, start_yaw, end_x, end_y, end_yaw, vectors, curvature, (id,step-1),self.selected_arrow,self.selected_point)
 
@@ -105,17 +105,17 @@ class Main():
                     continue
                 match dir:
                     case 'L':
-                        self.send_packet(id,-0.17,-0.08)
+                        self.send_packet(id,-0.2,-0.08)
                     case 'S':
                         self.send_packet(id,-0.15,-0.15)
                     case 'R':
-                        self.send_packet(id,-0.08,-0.17)
+                        self.send_packet(id,-0.08,-0.2)
                     case 'STOP':
                         self.send_packet(id,0,0)
                         step = step + 1
                         if step >= len(self.destinations[id][1]):
                             step = 0
-                        print(step)
+                        # print(step)
                         self.destinations[id][0] = step
                 break
         else:
@@ -159,7 +159,6 @@ class Main():
             
         if event == cv2.EVENT_MOUSEMOVE:
             if self.selected_arrow[0] != -1 and self.selected_arrow[0] in self.destinations: 
-                print(self.selected_arrow)
                 end_x, end_y, _ = self.destinations[self.selected_arrow[0]][1][self.selected_arrow[1]]
                 end_yaw = np.arctan2((y-end_y),(x-end_x))
                 self.destinations[self.selected_arrow[0]][1][self.selected_arrow[1]] = (end_x,end_y,end_yaw)
